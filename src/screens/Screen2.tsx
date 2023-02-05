@@ -1,20 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 
-const Screen2 = ({ navigation, route }: any) => {
-  const events = useSelector((state: any) => state.events);
-  const eventId = route.params.eventId;
-  const event = events.find((event: any) => event.id === eventId);
-  console.log(event)
+const Screen2 = ({ route, navigation }: any) => {
+  const event = route.params.event
   return (
-    <SafeAreaView style={{flex:1, justifyContent:"center", alignItems:"center"}}>
-      <Text>{event.type}</Text>
+    <View style={{flex:1}}>
+      <Text>{event.actor.login}</Text>
       <Text>{event.actor.url}</Text>
-      <Text>{event.repo.url}</Text>
-      <Text>{event.commits!=null ? event.payload.commits[0].message:null}</Text>
-    </SafeAreaView>
+    </View>
   );
 };
 

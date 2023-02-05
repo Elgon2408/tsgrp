@@ -1,49 +1,49 @@
-import { useEffect, useState } from "react";
+
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 import { FlatList, Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { connect, useDispatch, useSelector } from "react-redux";
-import { fetchEvents } from "../reducers/store";
+import { fetchEvents, pauseEventsUpdate, resumeEventsUpdate } from "../reducers/actions";
 
-function Screen1({ navigation }: any) {
-    const events = useSelector((state: any) => state.events);
+const Screen1 = ({ navigation }: any) => {
+    const currentTime = new Date().getTime();
+    const [lastUpdate, setLastUpdate] = useState(0);
+    const events = useSelector((state: any) => state.events.events);
+    const isEventsUpdatePaused = useSelector((state: any) => state.events.isEventsUpdatePaused);
     const dispatch = useDispatch();
-    const [refresh, setRefresh] = useState(false);
-
     useEffect(() => {
         dispatch(fetchEvents());
-        const intervalId = setInterval(() => {
-            dispatch(fetchEvents());
+        const interval = setInterval(() => {
+            if (!isEventsUpdatePaused) {
+                dispatch(fetchEvents());
+                setLastUpdate(new Date().getTime());
+            }
         }, 60000);
-        return () => clearInterval(intervalId);
-    }, []);
+        return () => clearInterval(interval);
+    }, [dispatch, isEventsUpdatePaused]);
 
-    useEffect(() => {
-        let refreshIntervalId = setInterval(() => {
-            handleRefresh();
-        }, 15000);
-        return () => clearInterval(refreshIntervalId);
-    }, [refresh]);
-
-    const handleRefresh = async () => {
-        setRefresh(true);
-        dispatch(fetchEvents());
-        setRefresh(false);
+    const onEventPress = (event: any) => {
+        navigation.navigate('Screen2', { event });
+        dispatch(pauseEventsUpdate());
     };
 
-    const separator = () => {
-        return <View style={styles.separatorStyle} />;
+    const onRefresh = () => {
+        if (lastUpdate && currentTime - lastUpdate < 15000) {
+            return;
+        }
+        dispatch(fetchEvents());
+        setLastUpdate(currentTime);
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View>
+            {lastUpdate && <Text>You can update the list in {Math.max(0, 15 - (currentTime - lastUpdate) / 1000)} seconds.</Text>}
             <FlatList
                 data={events}
-                ItemSeparatorComponent={separator}
+                onScroll={() => dispatch(pauseEventsUpdate())}
+                onMomentumScrollEnd={() => dispatch(resumeEventsUpdate())}
                 renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() =>
-                        navigation.navigate("Screen2", {
-                            eventId: item.id,
-                        }
-                        )}>
+                    <TouchableOpacity onPress={() => onEventPress(item)}>
                         <View style={styles.flatListStyle}>
                             <Image resizeMode="contain" style={styles.imageBox} source={{ uri: item.actor.avatar_url }} />
                             <Text style={styles.loginStyle}>{item.actor.login}</Text>
@@ -51,12 +51,12 @@ function Screen1({ navigation }: any) {
                         </View>
                     </TouchableOpacity>
                 )}
-                onRefresh={handleRefresh}
-                refreshing={refresh}
-                keyExtractor={item => item.id.toString()}
+                onRefresh={onRefresh}
+                refreshing={false}
+                keyExtractor={item => item.id}
             />
-        </SafeAreaView>
-    )
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
