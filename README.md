@@ -1,7 +1,7 @@
 # tsgrp
 **Mobile app in React-Native CLI (iOS, Android)**
 
-Used: react-navigation, redux
+Used: react-navigation, redux.  
 API: https://api.github.com/events
 ```
 export const fetchEvents = () => {
